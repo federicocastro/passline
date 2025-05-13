@@ -35,19 +35,25 @@ os.makedirs(BASE_DIR / "uploaded_images", exist_ok=True)
 
 batch_manager = GitBatchManager(BASE_DIR/ "uploaded_images")
 
+
 async def subir_imagen(buffer, id_tarea):
-    local_path = BASE_DIR / f"images/{uuid4().hex}.png"
+    unique_name = f"{uuid4().hex}.png"
+    local_path = BASE_DIR / f"images/{unique_name}"
+
     with open(local_path, 'wb') as f:
         f.write(buffer.getvalue())
+
     print(f"[Task {id_tarea}] Imagen guardada localmente: {local_path}")
 
+    # Ahora sí coincide exactamente con la URL generada por el batch_manager
     url, future = await batch_manager.add_image(local_path)
     print(f"[Task {id_tarea}] URL prometida: {url}")
 
-    await future  # Espera que git push se complete
+    await future
     print(f"[Task {id_tarea}] Imagen subida correctamente: {url}")
 
     return url
+
 
 async def obtener_texto_captcha(buffer_imagen, id_tarea) -> str:
     print(f"[Task {id_tarea}] Procesando imagen captcha...")
@@ -72,6 +78,7 @@ async def obtener_texto_captcha(buffer_imagen, id_tarea) -> str:
     imagen_modificada.save(buffer_final, format="PNG")
     buffer_final.seek(0)
 
+    # Usa ahora el método correcto y compatible con batch manager
     url_imagen = await subir_imagen(buffer_final, id_tarea)
 
     print(f"[Task {id_tarea}] Consultando OpenAI...")
@@ -91,7 +98,7 @@ async def obtener_texto_captcha(buffer_imagen, id_tarea) -> str:
 def ejecutar_navegador_sync(id_tarea):
     print(f"[Task {id_tarea}] Iniciando navegador...")
     opts = Options()
-    opts.add_argument("--headless")
+    #opts.add_argument("--headless")
     opts.add_argument("--disable-gpu")
     opts.add_argument("--window-size=1200,800")
 
@@ -118,7 +125,9 @@ def ejecutar_navegador_sync(id_tarea):
             buffer = io.BytesIO(base64.b64decode(b64data))
             print(f"[Task {id_tarea}] Captcha descargado desde navegador")
 
+            print(f"[Task {id_tarea}] Llamando GPT")
             codigo_captcha = asyncio.run(obtener_texto_captcha(buffer, id_tarea))
+            print(f"[Task {id_tarea}] GPT LLamado codigo: {codigo_captcha}")
 
             input_elem = driver.find_element(By.ID, 'solution')
             input_elem.clear()

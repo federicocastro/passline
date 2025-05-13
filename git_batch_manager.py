@@ -3,7 +3,6 @@ import os
 import subprocess
 import uuid
 from typing import List, Tuple
-import pathlib
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -32,7 +31,8 @@ class GitBatchManager:
 
         subprocess.run(["cp", local_image_path, dest_path], check=True)
 
-        url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{BRANCH}/{unique_name}"
+        # Asegura incluir el directorio correcto en la URL
+        url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{BRANCH}/uploaded_images/{unique_name}"
 
         future = asyncio.get_event_loop().create_future()
 
@@ -49,6 +49,7 @@ class GitBatchManager:
     async def _process_batch(self):
         async with self.lock:
             if not self.pending_images:
+                print("No hay imágenes pendientes para subir.")
                 return
 
             images_batch = self.pending_images[:self.batch_size]
@@ -56,11 +57,15 @@ class GitBatchManager:
 
         filenames = [name for name, _ in images_batch]
 
+        print(f"Iniciando subida de lote de imágenes: {filenames}")
+
         try:
             await asyncio.get_event_loop().run_in_executor(None, self._git_push, filenames)
+            print(f"Subida de lote completada exitosamente: {filenames}")
             for _, future in images_batch:
                 future.set_result(True)
         except Exception as e:
+            print(f"Error en la subida de lote: {e}")
             for _, future in images_batch:
                 future.set_exception(e)
 
@@ -72,5 +77,8 @@ class GitBatchManager:
             subprocess.run(["git", "add"] + filenames, check=True)
             subprocess.run(["git", "commit", "-m", f"Añadir lote de {len(filenames)} imágenes"], check=True)
             subprocess.run(["git", "push", "origin", BRANCH], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error en git: {e}")
+            raise e  # Re-lanza la excepción para verla claramente
         finally:
             os.chdir(cwd)
