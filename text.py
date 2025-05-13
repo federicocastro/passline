@@ -2,9 +2,13 @@
 import os
 import subprocess
 import uuid
+import pathlib
+
+BASE_DIR = pathlib.Path(__file__).resolve().parent
 
 # Configuración inicial
-REPO_LOCAL_PATH = "/Users/carolinahuergo/Documents/youser/queueprobot/passline"  # Cambiar por tu ruta local
+REPO_LOCAL_PATH = BASE_DIR  # Cambiar por tu ruta local
+
 GITHUB_USER = "federicocastro"
 GITHUB_REPO = "passline"
 BRANCH = "main"

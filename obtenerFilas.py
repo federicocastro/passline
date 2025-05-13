@@ -11,7 +11,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor
-from text import subir_imagen_y_obtener_url
+from dotenv import load_dotenv
+from git_batch_manager import GitBatchManager
+import pathlib
+
+load_dotenv()
 
 ANCHO_A_CORTAR = 50
 RGB_NEGRO = (0, 0, 0)
@@ -19,19 +23,20 @@ RGB_BLANCO = (255, 255, 255)
 URL = 'https://dfentertainment.queue-it.net/?c=dfentertainment&e=badbonnyprever&cid=es-CL'
 TIMEOUT = 15
 
-client = OpenAI(api_key='')
+client = OpenAI(api_key=os.getenv("OPENAIAPI_KEY"))
 
 MAX_BROWSERS = 5
 webdriver_executor = ThreadPoolExecutor(max_workers=MAX_BROWSERS)
 
-from git_batch_manager import GitBatchManager
-import asyncio
+BASE_DIR = pathlib.Path(__file__).parent
 
-batch_manager = GitBatchManager('/ruta/a/tu/repo')
-os.makedirs("images", exist_ok=True)
+os.makedirs(BASE_DIR / "images", exist_ok=True)
+os.makedirs(BASE_DIR / "uploaded_images", exist_ok=True)
+
+batch_manager = GitBatchManager(BASE_DIR/ "uploaded_images")
 
 async def subir_imagen(buffer, id_tarea):
-    local_path = f"images/{uuid4().hex}.png"
+    local_path = BASE_DIR / f"images/{uuid4().hex}.png"
     with open(local_path, 'wb') as f:
         f.write(buffer.getvalue())
     print(f"[Task {id_tarea}] Imagen guardada localmente: {local_path}")
@@ -44,7 +49,7 @@ async def subir_imagen(buffer, id_tarea):
 
     return url
 
-def obtener_texto_captcha_sync(buffer_imagen, id_tarea) -> str:
+async def obtener_texto_captcha(buffer_imagen, id_tarea) -> str:
     print(f"[Task {id_tarea}] Procesando imagen captcha...")
     imagen_original = Image.open(buffer_imagen).convert("RGB")
     pixeles = imagen_original.load()
@@ -63,21 +68,18 @@ def obtener_texto_captcha_sync(buffer_imagen, id_tarea) -> str:
                    (r < 100 and g < 130 if tipo == "AZUL" else r > 130)
             imagen_modificada.putpixel((x - ANCHO_A_CORTAR, y), RGB_NEGRO if cond else RGB_BLANCO)
 
-    uuid_imagen = uuid4()
-    local_path = os.path.abspath(f"images/{uuid_imagen}.png")
-    imagen_modificada.save(local_path)
-    print(f"[Task {id_tarea}] Imagen captcha guardada: {local_path}")
+    buffer_final = io.BytesIO()
+    imagen_modificada.save(buffer_final, format="PNG")
+    buffer_final.seek(0)
 
-    print(f"[Task {id_tarea}] Subiendo imagen...")
-    url = subir_imagen_y_obtener_url(local_path)
-    print(f"[Task {id_tarea}] Imagen subida URL: {url}")
+    url_imagen = await subir_imagen(buffer_final, id_tarea)
 
     print(f"[Task {id_tarea}] Consultando OpenAI...")
     response = client.responses.create(
         model="gpt-4.1",
         input=[
             {"role": "user", "content": "Extrae solo el texto que aparece en esta imagen, sin explicaciones."},
-            {"role": "user", "content": [{"type": "input_image", "image_url": url}]}
+            {"role": "user", "content": [{"type": "input_image", "image_url": url_imagen}]}
         ]
     )
 
@@ -116,7 +118,7 @@ def ejecutar_navegador_sync(id_tarea):
             buffer = io.BytesIO(base64.b64decode(b64data))
             print(f"[Task {id_tarea}] Captcha descargado desde navegador")
 
-            codigo_captcha = obtener_texto_captcha_sync(buffer, id_tarea)
+            codigo_captcha = asyncio.run(obtener_texto_captcha(buffer, id_tarea))
 
             input_elem = driver.find_element(By.ID, 'solution')
             input_elem.clear()
@@ -142,6 +144,7 @@ async def obtener_fila_id_async(id_tarea):
     print(f"[Task {id_tarea}] Resultado final - ID de fila: {fila_id}")
 
 async def main(cantidad_ids):
+    await batch_manager.start()
     tareas = [obtener_fila_id_async(i) for i in range(cantidad_ids)]
     await asyncio.gather(*tareas)
 
