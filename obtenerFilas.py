@@ -14,7 +14,6 @@ from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from git_batch_manager import GitBatchManager
 import pathlib
-import time
 
 load_dotenv()
 
