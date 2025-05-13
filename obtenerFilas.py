@@ -154,8 +154,13 @@ async def obtener_fila_id_async(id_tarea):
 
 async def main(cantidad_ids):
     await batch_manager.start()
+
     tareas = [obtener_fila_id_async(i) for i in range(cantidad_ids)]
     await asyncio.gather(*tareas)
+
+    # Cerrar batch_manager al finalizar tareas principales
+    await batch_manager.stop()
+
 
 if __name__ == "__main__":
     asyncio.run(main(5))

@@ -19,10 +19,16 @@ class GitBatchManager:
         self.lock = asyncio.Lock()
         self.pending_images: List[Tuple[str, asyncio.Future]] = []
         self.task = None
+        self._running = True  # Indicador para mantener o terminar el loop
 
     async def start(self):
         if self.task is None:
             self.task = asyncio.create_task(self._batch_worker())
+
+    async def stop(self):
+        self._running = False
+        if self.task:
+            await self.task
 
     async def add_image(self, local_image_path):
         _, ext = os.path.splitext(local_image_path)
@@ -31,7 +37,6 @@ class GitBatchManager:
 
         subprocess.run(["cp", local_image_path, dest_path], check=True)
 
-        # Asegura incluir el directorio correcto en la URL
         url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{BRANCH}/uploaded_images/{unique_name}"
 
         future = asyncio.get_event_loop().create_future()
@@ -42,7 +47,7 @@ class GitBatchManager:
         return url, future
 
     async def _batch_worker(self):
-        while True:
+        while self._running or self.pending_images:
             await asyncio.sleep(self.interval)
             await self._process_batch()
 
@@ -79,6 +84,6 @@ class GitBatchManager:
             subprocess.run(["git", "push", "origin", BRANCH], check=True)
         except subprocess.CalledProcessError as e:
             print(f"Error en git: {e}")
-            raise e  # Re-lanza la excepción para verla claramente
+            raise e
         finally:
             os.chdir(cwd)
