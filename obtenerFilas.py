@@ -14,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from git_batch_manager import GitBatchManager
 import pathlib
+import time
 
 load_dotenv()
 
@@ -143,6 +144,7 @@ async def ejecutar_navegador_async(id_tarea):
             print(f"[Task {id_tarea}] Captcha enviado: {codigo_captcha}")
 
         # Espera a obtener la ID de fila
+        time.sleep(5)
         fila_elem = wait.until(EC.presence_of_element_located((By.ID, 'hlLinkToQueueTicket2')))
         fila_id = fila_elem.text.strip()
         print(f"[Task {id_tarea}] ID de fila obtenido: {fila_id}")
