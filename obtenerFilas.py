@@ -99,7 +99,7 @@ async def obtener_texto_captcha(buffer_imagen, id_tarea) -> str:
 async def ejecutar_navegador_async(id_tarea):
     print(f"[Task {id_tarea}] Iniciando navegador...")
     opts = Options()
-    #opts.add_argument("--headless")
+    opts.add_argument("--headless")
     opts.add_argument("--disable-gpu")
     opts.add_argument("--window-size=1200,800")
 
@@ -160,7 +160,7 @@ async def ejecutar_navegador_async(id_tarea):
             await asyncio.sleep(3)
 
         # Espera a obtener la ID de fila
-        time.sleep(5)
+        await asyncio.sleep(5)
         fila_elem = wait.until(EC.presence_of_element_located((By.ID, 'hlLinkToQueueTicket2')))
         fila_id = fila_elem.text.strip()
         print(f"[Task {id_tarea}] ID de fila obtenido: {fila_id}")
@@ -186,4 +186,4 @@ async def main(cantidad_ids):
 
 
 if __name__ == "__main__":
-    asyncio.run(main(1))
+    asyncio.run(main(100))
