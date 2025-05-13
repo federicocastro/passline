@@ -1,16 +1,17 @@
 import base64
 import io
 import os
+import boto3
 from uuid import uuid4
 from time import sleep
 from PIL import Image
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from playwright.sync_api import sync_playwright
 from openai import OpenAI
 from dotenv import load_dotenv
+
+# DynamoDB config
+dynamo = boto3.resource('dynamodb', region_name='us-east-1')
+tabla = dynamo.Table('FilasQueue')
 
 load_dotenv()
 
@@ -18,16 +19,17 @@ load_dotenv()
 ANCHO_A_CORTAR = 50
 RGB_NEGRO = (0, 0, 0)
 RGB_BLANCO = (255, 255, 255)
-URL = 'https://dfentertainment.queue-it.net/?c=dfentertainment&e=badbonnyprever&cid=es-CL'
-TIMEOUT = 20
+URL = os.environ.get("URL", "https://dfentertainment.queue-it.net/?c=dfentertainment&e=badbonnyprever&cid=es-CL")
+TIMEOUT = 20000  # en milisegundos para Playwright
 
 # Cliente OpenAI
 client = OpenAI(api_key=os.getenv("OPENAIAPI_KEY"))
 
 # Directorios
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-IMAGES_DIR = os.path.join(BASE_DIR, "images")
-RESULTS_DIR = os.path.join(BASE_DIR, "results")
+IMAGES_DIR = "/tmp/images"
+RESULTS_DIR = "/tmp/results"
+DEBUG=os.getenv("DEBUG", False)
 os.makedirs(IMAGES_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
@@ -84,42 +86,44 @@ def obtener_texto_captcha(buffer_imagen, id_tarea) -> str:
     return texto
 
 def ejecutar_navegador_sync(id_tarea):
-    print(f"[Task {id_tarea}] Iniciando navegador...")
-    opts = Options()
-    if os.getenv("DEBUG"):
-        opts.debug = True
-    else:
-        opts.debug = False
-        opts.add_argument("--headless")
-    opts.add_argument("--disable-gpu")
-    opts.add_argument("--window-size=1200,800")
+    print(f"[Task {id_tarea}] Iniciando navegador con Playwright...")
 
-    driver = webdriver.Chrome(options=opts)
-    wait = WebDriverWait(driver, TIMEOUT)
     fila_id = None
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--single-process',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+            ]
+        )
+        context = browser.new_context(viewport={"width":1200, "height":800})
+        page = context.new_page()
 
-    try:
         print(f"[Task {id_tarea}] Accediendo a URL: {URL}")
-        driver.get(URL)
+        page.goto(URL, timeout=TIMEOUT)
 
         ultimo_src_captcha = None
 
         for intento in range(6):
             print(f"[Task {id_tarea}] Intento de captcha #{intento + 1}")
 
-            sleep(1)
             try:
-                wait.until(EC.element_to_be_clickable((By.CLASS_NAME, 'botdetect-button')))
+                page.wait_for_selector('.botdetect-button', timeout=5000)
             except Exception:
                 print(f"[Task {id_tarea}] Botón captcha no encontrado, probablemente no necesario")
                 break
 
-            def cambio_de_captcha(driver):
-                elem = driver.find_element(By.CLASS_NAME, 'captcha-code')
-                src = elem.get_attribute('src')
-                return src if src != ultimo_src_captcha else False
+            page.wait_for_selector('.captcha-code', timeout=TIMEOUT)
+            src_captcha = page.get_attribute('.captcha-code', 'src')
 
-            src_captcha = WebDriverWait(driver, TIMEOUT).until(cambio_de_captcha)
+            if src_captcha == ultimo_src_captcha:
+                print(f"[Task {id_tarea}] La imagen del captcha no cambió, esperando...")
+                sleep(2)
+                continue
             ultimo_src_captcha = src_captcha
 
             b64data = src_captcha.split(',', 1)[1]
@@ -128,38 +132,35 @@ def ejecutar_navegador_sync(id_tarea):
 
             codigo_captcha = obtener_texto_captcha(buffer, id_tarea)
 
-            input_elem = driver.find_element(By.ID, 'solution')
-            input_elem.clear()
-            input_elem.send_keys(codigo_captcha)
-            driver.find_element(By.CLASS_NAME, 'botdetect-button').click()
+            page.fill('#solution', codigo_captcha)
+            page.click('.botdetect-button')
             print(f"[Task {id_tarea}] Captcha enviado: {codigo_captcha}")
+
             sleep(3)
 
         sleep(6)
-        fila_elem = wait.until(EC.presence_of_element_located((By.ID, 'hlLinkToQueueTicket2')))
-        fila_id = fila_elem.text.strip()
+        fila_elem = page.wait_for_selector('#hlLinkToQueueTicket2', timeout=TIMEOUT)
+        fila_id = fila_elem.inner_text().strip()
         print(f"[Task {id_tarea}] ID de fila obtenido: {fila_id}")
+        context.close()
+        browser.close()
 
-        # Guardamos la fila obtenida en un archivo txt
-        ruta_resultado = os.path.join(RESULTS_DIR, f"id_{id_tarea}_{fila_id}.txt")
-        with open(ruta_resultado, "w") as archivo_resultado:
-            archivo_resultado.write(fila_id)
-
-        print(f"[Task {id_tarea}] Fila guardada en: {ruta_resultado}")
-
-    except Exception as e:
-        print(f"[Task {id_tarea}] Error durante ejecución: {e}")
-    finally:
-        driver.quit()
-        print(f"[Task {id_tarea}] Navegador cerrado")
+       # Guardar en DynamoDB si tiene fila_id
+        if fila_id and fila_id != '00000000-0000-0000-0000-000000000000':
+            tabla.put_item(
+                Item={
+                    'task_id': id_tarea,
+                    'fila_id': fila_id
+                }
+            )
 
     return fila_id
 
 def main():
-    task_id = uuid4()
+    task_id = f"{uuid4().hex}"
     print(f"\n🔹 Iniciando tarea {task_id}")
     fila_id = ejecutar_navegador_sync(task_id)
-    print(f"[Task: task_id] Resultado final - ID de fila: {fila_id}")
+    print(f"[Task {task_id}] Resultado final - ID de fila: {fila_id}")
 
 if __name__ == "__main__":
     main()
