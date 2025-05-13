@@ -1,0 +1,122 @@
+(venv) carolinahuergo@Laptop-de-Carolina queueprobot % python3 obtenerFilas.py
+[Task 0] Iniciando navegador...
+[Task 1] Iniciando navegador...
+[Task 2] Iniciando navegador...
+[Task 3] Iniciando navegador...
+[Task 4] Iniciando navegador...
+[Task 2] Accediendo a URL: https://dfentertainment.queue-it.net/?c=dfentertainment&e=badbonnyprever&cid=es-CL
+[Task 1] Accediendo a URL: https://dfentertainment.queue-it.net/?c=dfentertainment&e=badbonnyprever&cid=es-CL
+[Task 4] Accediendo a URL: https://dfentertainment.queue-it.net/?c=dfentertainment&e=badbonnyprever&cid=es-CL
+[Task 3] Accediendo a URL: https://dfentertainment.queue-it.net/?c=dfentertainment&e=badbonnyprever&cid=es-CL
+[Task 0] Accediendo a URL: https://dfentertainment.queue-it.net/?c=dfentertainment&e=badbonnyprever&cid=es-CL
+[Task 4] Intento de captcha #1
+[Task 1] Intento de captcha #1
+[Task 2] Intento de captcha #1
+[Task 3] Intento de captcha #1
+[Task 0] Intento de captcha #1
+[Task 1] Captcha descargado desde navegador
+[Task 1] Procesando imagen captcha...
+[Task 0] Captcha descargado desde navegador
+[Task 0] Procesando imagen captcha...
+[Task 3] Captcha descargado desde navegador
+[Task 3] Procesando imagen captcha...
+[Task 2] Captcha descargado desde navegador
+[Task 2] Procesando imagen captcha...
+[Task 4] Captcha descargado desde navegador
+[Task 4] Procesando imagen captcha...
+[Task 3] Tipo captcha detectado: CUADRICULADO
+[Task 4] Tipo captcha detectado: AZUL
+[Task 2] Tipo captcha detectado: CUADRICULADO
+[Task 0] Tipo captcha detectado: AZUL
+[Task 1] Tipo captcha detectado: AZUL
+[Task 2] Imagen captcha guardada: /Users/carolinahuergo/Documents/youser/queueprobot/images/116447bd-04dc-4f55-bb63-20644b391f08.png
+[Task 2] Subiendo imagen...
+[Task 1] Imagen captcha guardada: /Users/carolinahuergo/Documents/youser/queueprobot/images/076d9cf5-0c39-4188-a540-f5120c885bdd.png
+[Task 4] Imagen captcha guardada: /Users/carolinahuergo/Documents/youser/queueprobot/images/202e3eb5-a985-473a-99e1-a94421658693.png
+[Task 4] Subiendo imagen...
+[Task 0] Imagen captcha guardada: /Users/carolinahuergo/Documents/youser/queueprobot/images/6f10e306-16b6-4f82-ad16-b61a8bb7476c.png
+[Task 0] Subiendo imagen...
+[Task 1] Subiendo imagen...
+[Task 3] Imagen captcha guardada: /Users/carolinahuergo/Documents/youser/queueprobot/images/a003f0d1-183c-44cb-b48f-fd9f0822aa31.png
+[Task 3] Subiendo imagen...
+fatal: Unable to create '/Users/carolinahuergo/Documents/youser/queueprobot/passline/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+fatal: Unable to create '/Users/carolinahuergo/Documents/youser/queueprobot/passline/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+fatal: Unable to create '/Users/carolinahuergo/Documents/youser/queueprobot/passline/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+[Task 4] Error durante ejecución: Command '['git', 'add', '9eef6826a7e740cd8d61e0a0647807c1.png']' returned non-zero exit status 128.
+[Task 0] Error durante ejecución: Command '['git', 'add', '3ad9c1a5b0ae497588ec1b7dfabf2f22.png']' returned non-zero exit status 128.
+fatal: Unable to create '/Users/carolinahuergo/Documents/youser/queueprobot/passline/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+[Task 1] Error durante ejecución: Command '['git', 'add', 'e1af629911cc432a8ca5c699889fadbc.png']' returned non-zero exit status 128.
+[Task 3] Error durante ejecución: Command '['git', 'add', '45adf116e6d94433993a0faf4811582e.png']' returned non-zero exit status 128.
+[main 433302a] Añadir imagen 645348b09aec467ba8a170c492b45b25.png
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 645348b09aec467ba8a170c492b45b25.png
+[Task 4] Navegador cerrado
+[Task 4] Resultado final - ID de fila: None
+[Task 0] Navegador cerrado
+[Task 0] Resultado final - ID de fila: None
+[Task 3] Navegador cerrado
+[Task 3] Resultado final - ID de fila: None
+[Task 1] Navegador cerrado
+[Task 1] Resultado final - ID de fila: None
+Enumerating objects: 4, done.
+Counting objects: 100% (4/4), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 878 bytes | 878.00 KiB/s, done.
+Total 3 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+To https://github.com/federicocastro/passline
+   0fed14e..433302a  main -> main
+[Task 2] Imagen subida URL: https://raw.githubusercontent.com/federicocastro/passline/main/645348b09aec467ba8a170c492b45b25.png
+[Task 2] Consultando OpenAI...
+[Task 2] Captcha reconocido: 4JL8GG9
+[Task 2] Captcha enviado: 4JL8GG9
+[Task 2] Intento de captcha #2
+[Task 2] Captcha descargado desde navegador
+[Task 2] Procesando imagen captcha...
+[Task 2] Tipo captcha detectado: CUADRICULADO
+[Task 2] Imagen captcha guardada: /Users/carolinahuergo/Documents/youser/queueprobot/images/c2cd048b-cc00-4dd9-9daf-9713ba848213.png
+[Task 2] Subiendo imagen...
+[main ec6f872] Añadir imagen f2d082223f5d49f791e20a3e5a01a096.png
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 f2d082223f5d49f791e20a3e5a01a096.png
+Enumerating objects: 3, done.
+Counting objects: 100% (3/3), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (2/2), 300 bytes | 300.00 KiB/s, done.
+Total 2 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+To https://github.com/federicocastro/passline
+   433302a..ec6f872  main -> main
+[Task 2] Imagen subida URL: https://raw.githubusercontent.com/federicocastro/passline/main/f2d082223f5d49f791e20a3e5a01a096.png
+[Task 2] Consultando OpenAI...
+[Task 2] Captcha reconocido: 4JL8GG9
+[Task 2] Captcha enviado: 4JL8GG9
+[Task 2] ID de fila obtenido: 
+[Task 2] Navegador cerrado
+[Task 2] Resultado final - ID de fila: 
