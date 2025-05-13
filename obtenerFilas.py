@@ -99,7 +99,7 @@ async def obtener_texto_captcha(buffer_imagen, id_tarea) -> str:
 async def ejecutar_navegador_async(id_tarea):
     print(f"[Task {id_tarea}] Iniciando navegador...")
     opts = Options()
-    # opts.add_argument("--headless")
+    #opts.add_argument("--headless")
     opts.add_argument("--disable-gpu")
     opts.add_argument("--window-size=1200,800")
 
@@ -118,8 +118,12 @@ async def ejecutar_navegador_async(id_tarea):
         print(f"[Task {id_tarea}] Accediendo a URL: {URL}")
         driver.get(URL)
 
+        last_captcha_src = None  # Guarda el captcha anterior para detectar cambios
+
         for intento in range(2):
             print(f"[Task {id_tarea}] Intento de captcha #{intento+1}")
+
+            # Espera botón captcha
             try:
                 WebDriverWait(driver, 5).until(
                     EC.element_to_be_clickable((By.CLASS_NAME, 'botdetect-button'))
@@ -128,12 +132,21 @@ async def ejecutar_navegador_async(id_tarea):
                 print(f"[Task {id_tarea}] No se encontró botón captcha, probablemente no necesario")
                 break
 
-            img_elem = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'captcha-code')))
-            b64data = img_elem.get_attribute('src').split(',', 1)[1]
+            # Espera que la imagen captcha sea nueva y no la anterior
+            def captcha_src_cambio(driver):
+                elem = driver.find_element(By.CLASS_NAME, 'captcha-code')
+                src = elem.get_attribute('src')
+                return src if src != last_captcha_src else False
+
+            img_elem = WebDriverWait(driver, TIMEOUT).until(captcha_src_cambio)
+            last_captcha_src = img_elem  # Actualiza con el nuevo captcha src
+
+            # Ahora sí, descarga la imagen captcha nueva
+            b64data = last_captcha_src.split(',', 1)[1]
             buffer = io.BytesIO(base64.b64decode(b64data))
             print(f"[Task {id_tarea}] Captcha descargado desde navegador")
 
-            # Procesa el captcha de manera asincrónica ANTES de cerrar el navegador
+            # Procesa el captcha de manera asincrónica
             codigo_captcha = await obtener_texto_captcha(buffer, id_tarea)
 
             # Envía solución al navegador abierto
@@ -142,6 +155,9 @@ async def ejecutar_navegador_async(id_tarea):
             input_elem.send_keys(codigo_captcha)
             driver.find_element(By.CLASS_NAME, 'botdetect-button').click()
             print(f"[Task {id_tarea}] Captcha enviado: {codigo_captcha}")
+
+            # Espera corta tras enviar solución, para que la página recargue captcha o pase a fila
+            await asyncio.sleep(3)
 
         # Espera a obtener la ID de fila
         time.sleep(5)
