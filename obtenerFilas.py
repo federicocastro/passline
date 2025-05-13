@@ -156,7 +156,7 @@ async def ejecutar_navegador_async(id_tarea):
             print(f"[Task {id_tarea}] Captcha enviado: {codigo_captcha}")
 
             # Espera corta tras enviar solución, para que la página recargue captcha o pase a fila
-            await asyncio.sleep(3)
+            await asyncio.sleep(6)
 
         # Espera a obtener la ID de fila
         await asyncio.sleep(5)
