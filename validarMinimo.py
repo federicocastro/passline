@@ -9,6 +9,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from obtener_filas_sync import obtener_texto_captcha
+
 
 # Configuración
 NOMBRE_ARCHIVO = 'filas.txt'
@@ -25,32 +27,32 @@ def get_progress_bar_value(full_url: str, timeout: int = TIEMPO_ESPERA) -> int:
     """
     driver = webdriver.Chrome()
     try:
-        # driver.get(full_url)
-        # wait = WebDriverWait(driver, timeout)
+        driver.get(full_url)
+        wait = WebDriverWait(driver, timeout)
 
-        # try:
-        #     WebDriverWait(driver, 5).until(
-        #         EC.element_to_be_clickable((By.CLASS_NAME, 'botdetect-button'))
-        #     )
-        # except Exception:
-        #     print("EXCEPCION")
-        # img_elem = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'captcha-code')))
-        # b64data = img_elem.get_attribute('src').split(',', 1)[1]
-        # buffer = io.BytesIO(base64.b64decode(b64data))
+        try:
+            WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.CLASS_NAME, 'botdetect-button'))
+            )
+        except Exception:
+            print("EXCEPCION")
+        img_elem = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'captcha-code')))
+        b64data = img_elem.get_attribute('src').split(',', 1)[1]
+        buffer = io.BytesIO(base64.b64decode(b64data))
 
-        # codigo_captcha = obtener_texto_captcha_sync(buffer, '1')
+        codigo_captcha = obtener_texto_captcha(buffer, '1')
 
-        # input_elem = driver.find_element(By.ID, 'solution')
-        # input_elem.clear()
-        # input_elem.send_keys(codigo_captcha)
-        # driver.find_element(By.CLASS_NAME, 'botdetect-button').click()
+        input_elem = driver.find_element(By.ID, 'solution')
+        input_elem.clear()
+        input_elem.send_keys(codigo_captcha)
+        driver.find_element(By.CLASS_NAME, 'botdetect-button').click()
 
 
-        # elem = wait.until(
-        #     EC.presence_of_element_located((By.ID, "MainPart_divProgressbar"))
-        # )
-        # raw = elem.get_attribute("aria-valuenow")
-        # return int(raw)
+        elem = wait.until(
+            EC.presence_of_element_located((By.ID, "MainPart_divProgressbar"))
+        )
+        raw = elem.get_attribute("aria-valuenow")
+        return int(raw)
         return 50
     finally:
         driver.quit()
@@ -112,7 +114,8 @@ def main():
     respuestas = []
     with open(input_path, 'r', encoding='utf-8') as file:
         for line in file:
-            url = line.strip()
+            id = line.strip()
+            url = f'https://dfentertainment.queue-it.net/?c=dfentertainment&e=badbunnygralaa25&cid=es-CLL&q={id}'
             if not url:
                 continue
             print(f"Procesando: {url}")
