@@ -95,70 +95,69 @@ async def obtener_texto_captcha(buffer_imagen, id_tarea) -> str:
 
     return texto
 
-def ejecutar_navegador_sync(id_tarea):
+async def ejecutar_navegador_async(id_tarea):
     print(f"[Task {id_tarea}] Iniciando navegador...")
     opts = Options()
-    #opts.add_argument("--headless")
+    opts.add_argument("--headless")
     opts.add_argument("--disable-gpu")
     opts.add_argument("--window-size=1200,800")
 
-    driver = webdriver.Chrome(options=opts)
-    wait = WebDriverWait(driver, TIMEOUT)
-    fila_id = None
+    loop = asyncio.get_event_loop()
 
-    try:
-        print(f"[Task {id_tarea}] Accediendo a URL: {URL}")
-        driver.get(URL)
+    def _run_selenium():
+        driver = webdriver.Chrome(options=opts)
+        wait = WebDriverWait(driver, TIMEOUT)
+        try:
+            print(f"[Task {id_tarea}] Accediendo a URL: {URL}")
+            driver.get(URL)
 
-        for intento in range(2):
-            print(f"[Task {id_tarea}] Intento de captcha #{intento+1}")
-            try:
-                WebDriverWait(driver, 5).until(
-                    EC.element_to_be_clickable((By.CLASS_NAME, 'botdetect-button'))
-                )
-            except Exception:
-                print(f"[Task {id_tarea}] No se encontró botón captcha, probablemente no necesario")
-                break
+            for intento in range(2):
+                print(f"[Task {id_tarea}] Intento de captcha #{intento+1}")
+                try:
+                    WebDriverWait(driver, 5).until(
+                        EC.element_to_be_clickable((By.CLASS_NAME, 'botdetect-button'))
+                    )
+                except Exception:
+                    print(f"[Task {id_tarea}] No se encontró botón captcha, probablemente no necesario")
+                    break
 
-            img_elem = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'captcha-code')))
-            b64data = img_elem.get_attribute('src').split(',', 1)[1]
-            buffer = io.BytesIO(base64.b64decode(b64data))
-            print(f"[Task {id_tarea}] Captcha descargado desde navegador")
+                img_elem = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'captcha-code')))
+                b64data = img_elem.get_attribute('src').split(',', 1)[1]
+                buffer = io.BytesIO(base64.b64decode(b64data))
+                print(f"[Task {id_tarea}] Captcha descargado desde navegador")
 
-            print(f"[Task {id_tarea}] Llamando GPT")
-            codigo_captcha = asyncio.run(obtener_texto_captcha(buffer, id_tarea))
-            print(f"[Task {id_tarea}] GPT LLamado codigo: {codigo_captcha}")
+                yield buffer, driver
 
-            input_elem = driver.find_element(By.ID, 'solution')
-            input_elem.clear()
-            input_elem.send_keys(codigo_captcha)
-            driver.find_element(By.CLASS_NAME, 'botdetect-button').click()
-            print(f"[Task {id_tarea}] Captcha enviado: {codigo_captcha}")
+        except Exception as e:
+            print(f"[Task {id_tarea}] Error durante ejecución: {e}")
+        finally:
+            driver.quit()
+            print(f"[Task {id_tarea}] Navegador cerrado")
 
-        fila_elem = wait.until(EC.presence_of_element_located((By.ID, 'hlLinkToQueueTicket2')))
+    for buffer, driver in await loop.run_in_executor(webdriver_executor, lambda: list(_run_selenium())):
+        codigo_captcha = await obtener_texto_captcha(buffer, id_tarea)
+
+        input_elem = driver.find_element(By.ID, 'solution')
+        input_elem.clear()
+        input_elem.send_keys(codigo_captcha)
+        driver.find_element(By.CLASS_NAME, 'botdetect-button').click()
+        print(f"[Task {id_tarea}] Captcha enviado: {codigo_captcha}")
+
+        fila_elem = WebDriverWait(driver, TIMEOUT).until(EC.presence_of_element_located((By.ID, 'hlLinkToQueueTicket2')))
         fila_id = fila_elem.text.strip()
         print(f"[Task {id_tarea}] ID de fila obtenido: {fila_id}")
 
-    except Exception as e:
-        print(f"[Task {id_tarea}] Error durante ejecución: {e}")
-    finally:
-        driver.quit()
-        print(f"[Task {id_tarea}] Navegador cerrado")
-
-    return fila_id
+        return fila_id
 
 async def obtener_fila_id_async(id_tarea):
-    loop = asyncio.get_event_loop()
-    fila_id = await loop.run_in_executor(webdriver_executor, ejecutar_navegador_sync, id_tarea)
+    fila_id = await ejecutar_navegador_async(id_tarea)
     print(f"[Task {id_tarea}] Resultado final - ID de fila: {fila_id}")
+
 
 async def main(cantidad_ids):
     await batch_manager.start()
-
     tareas = [obtener_fila_id_async(i) for i in range(cantidad_ids)]
     await asyncio.gather(*tareas)
-
-    # Cerrar batch_manager al finalizar tareas principales
     await batch_manager.stop()
 
 
