@@ -2,7 +2,7 @@
 import os
 import time
 
-FILAS_POR_ARCHIVO = 50
+FILAS_POR_ARCHIVO = 10
 PREFIJO_NOMBRE_ARCHIVO = "filas"
 CARPETA_ORIGEN = "filasObtenidas"
 CARPETA_DESTINO = "filasAValidar"
@@ -59,4 +59,4 @@ if __name__ == "__main__":
     start = time.time()
     reorganizarFilas(CARPETA_ORIGEN, CARPETA_DESTINO, FILAS_POR_ARCHIVO)
     end = time.time()
-    print(f"TIEMPO QUE TARDO ATR: {end-start:.4f} sec")
+    print(f"TIEMPO QUE TARDO: {end-start:.4f} sec")
