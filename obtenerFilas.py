@@ -185,4 +185,4 @@ async def main(cantidad_ids):
 
 
 if __name__ == "__main__":
-    asyncio.run(main(10))
+    asyncio.run(main(1))
