@@ -19,7 +19,7 @@ RGB_BLANCO = (255, 255, 255)
 URL = 'https://dfentertainment.queue-it.net/?c=dfentertainment&e=badbonnyprever&cid=es-CL'
 TIMEOUT = 15
 
-client = OpenAI(api_key='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')
+client = OpenAI(api_key='')
 
 MAX_BROWSERS = 5
 webdriver_executor = ThreadPoolExecutor(max_workers=MAX_BROWSERS)
